@@ -7,10 +7,12 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 
 left_mouse_button_pressed = 0
+right_mouse_button_pressed = 0
 mouse_x_pos_old = 0
 mouse_y_pos_old = 0
 theta = 0.0
 phi = 0.0
+scale = 1.0
 pix2angle = 1.0
 
 N = 50
@@ -87,18 +89,24 @@ def update_viewport(window, width, height):
 
 
 def mouse_button_callback(window, button, action, mods):
-    global left_mouse_button_pressed
+    global left_mouse_button_pressed, right_mouse_button_pressed
 
-    if button == GLFW_MOUSE_BUTTON_LEFT and action == GLFW_PRESS:
-        left_mouse_button_pressed = 1
-    else:
-        left_mouse_button_pressed = 0
+    if action == GLFW_PRESS:
+        if button == GLFW_MOUSE_BUTTON_LEFT:
+            left_mouse_button_pressed = 1
+        elif button == GLFW_MOUSE_BUTTON_RIGHT:
+            right_mouse_button_pressed = 1
+    elif action == GLFW_RELEASE:
+        if button == GLFW_MOUSE_BUTTON_LEFT:
+            left_mouse_button_pressed = 0
+        elif button == GLFW_MOUSE_BUTTON_RIGHT:
+            right_mouse_button_pressed = 0
 
 
 def mouse_motion_callback(window, x_pos, y_pos):
     global delta_x, delta_y
     global mouse_x_pos_old, mouse_y_pos_old
-    global theta, phi
+    global theta, phi, scale
 
     delta_x = x_pos - mouse_x_pos_old
     mouse_x_pos_old = x_pos
@@ -110,13 +118,19 @@ def mouse_motion_callback(window, x_pos, y_pos):
         theta += delta_x * pix2angle
         phi += delta_y * pix2angle
 
+    if right_mouse_button_pressed:
+        scale += delta_x * 0.01
+
 
 def render(time):
+    global theta, phi, scale
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
 
     glRotatef(theta, 0.0, 1.0, 0.0)
     glRotatef(phi, 1.0, 0.0, 0.0)
+    glScalef(scale, scale, scale)
 
     axes()
 
@@ -149,7 +163,7 @@ def main():
     if not glfwInit():
         sys.exit(-1)
 
-    window = glfwCreateWindow(400, 400, "Lab 4 - Zadanie 3.0", None, None)
+    window = glfwCreateWindow(400, 400, "Lab 4 - Zadanie 3.5", None, None)
     if not window:
         glfwTerminate()
         sys.exit(-1)
