@@ -12,7 +12,7 @@ mouse_x_pos_old = 0
 mouse_y_pos_old = 0
 theta = 0.0
 phi = 0.0
-scale = 1.0
+R = 10.0
 pix2angle = 1.0
 
 N = 50
@@ -79,10 +79,7 @@ def update_viewport(window, width, height):
     aspect_ratio = width / height
     pix2angle = 360.0 / width
 
-    if width <= height:
-        glOrtho(-7.5, 7.5, -7.5 / aspect_ratio, 7.5 / aspect_ratio, 10.0, -10.0)
-    else:
-        glOrtho(-7.5 * aspect_ratio, 7.5 * aspect_ratio, -7.5, 7.5, 10.0, -10.0)
+    gluPerspective(70.0, aspect_ratio, 0.1, 300.0)
 
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
@@ -106,7 +103,7 @@ def mouse_button_callback(window, button, action, mods):
 def mouse_motion_callback(window, x_pos, y_pos):
     global delta_x, delta_y
     global mouse_x_pos_old, mouse_y_pos_old
-    global theta, phi, scale
+    global theta, phi, R
 
     delta_x = x_pos - mouse_x_pos_old
     mouse_x_pos_old = x_pos
@@ -119,18 +116,30 @@ def mouse_motion_callback(window, x_pos, y_pos):
         phi += delta_y * pix2angle
 
     if right_mouse_button_pressed:
-        scale += delta_x * 0.01
+        R += delta_y * 0.1
+        if R < 0.1: R = 0.1
 
 
 def render(time):
-    global theta, phi, scale
+    global theta, phi, R
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
 
-    glRotatef(theta, 0.0, 1.0, 0.0)
-    glRotatef(phi, 1.0, 0.0, 0.0)
-    glScalef(scale, scale, scale)
+    th_rad = theta * math.pi / 180.0
+    ph_rad = phi * math.pi / 180.0
+
+    x_eye = R * math.cos(th_rad) * math.cos(ph_rad)
+    y_eye = R * math.sin(ph_rad)
+    z_eye = R * math.sin(th_rad) * math.cos(ph_rad)
+
+    up_y = 1.0
+    if (phi > 90.0 and phi < 270.0) or (phi < -90.0 and phi > -270.0):
+        up_y = -1.0
+
+    gluLookAt(x_eye, y_eye, z_eye,
+              0.0, 0.0, 0.0,
+              0.0, up_y, 0.0)
 
     axes()
 
@@ -163,7 +172,7 @@ def main():
     if not glfwInit():
         sys.exit(-1)
 
-    window = glfwCreateWindow(400, 400, "Lab 4 - Zadanie 3.5", None, None)
+    window = glfwCreateWindow(400, 400, "Lab 4 - Zadanie 4.0", None, None)
     if not window:
         glfwTerminate()
         sys.exit(-1)
