@@ -14,6 +14,10 @@ phi = 0.0
 R = 10.0
 pix2angle = 1.0
 
+light_theta = 0.0
+light_phi = 0.0
+light_R = 10.0
+
 N = 50
 V_TAB = np.zeros((N, N, 6), dtype=np.float32)
 
@@ -70,7 +74,6 @@ def startup():
 
     glLightfv(GL_LIGHT0, GL_AMBIENT, light0_ambient)
     glLightfv(GL_LIGHT0, GL_SPECULAR, light0_specular)
-    glLightfv(GL_LIGHT0, GL_POSITION, light0_position)
     glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, att_constant)
     glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, att_linear)
     glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, att_quadratic)
@@ -78,7 +81,6 @@ def startup():
     glLightfv(GL_LIGHT1, GL_AMBIENT, light1_ambient)
     glLightfv(GL_LIGHT1, GL_DIFFUSE, light1_diffuse)
     glLightfv(GL_LIGHT1, GL_SPECULAR, light1_specular)
-    glLightfv(GL_LIGHT1, GL_POSITION, light1_position)
     glLightf(GL_LIGHT1, GL_CONSTANT_ATTENUATION, att_constant)
     glLightf(GL_LIGHT1, GL_LINEAR_ATTENUATION, att_linear)
     glLightf(GL_LIGHT1, GL_QUADRATIC_ATTENUATION, att_quadratic)
@@ -135,16 +137,20 @@ def mouse_button_callback(window, button, action, mods):
 def mouse_motion_callback(window, x_pos, y_pos):
     global mouse_x_pos_old, mouse_y_pos_old
     global theta, phi, R
+    global light_theta, light_phi
+
     delta_x = x_pos - mouse_x_pos_old
     mouse_x_pos_old = x_pos
     delta_y = y_pos - mouse_y_pos_old
     mouse_y_pos_old = y_pos
+
     if left_mouse_button_pressed:
         theta += delta_x * pix2angle
         phi += delta_y * pix2angle
+
     if right_mouse_button_pressed:
-        R += delta_y * 0.1
-        if R < 0.1: R = 0.1
+        light_theta += delta_x * pix2angle
+        light_phi += delta_y * pix2angle
 
 
 def keyboard_key_callback(window, key, scancode, action, mods):
@@ -163,6 +169,8 @@ def keyboard_key_callback(window, key, scancode, action, mods):
 
 def render(time):
     global theta, phi, R
+    global light_theta, light_phi, light_R
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
 
@@ -176,8 +184,40 @@ def render(time):
         up_y = -1.0
     gluLookAt(x_eye, y_eye, z_eye, 0.0, 0.0, 0.0, 0.0, up_y, 0.0)
 
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, light0_diffuse)
+    l_th_rad = light_theta * math.pi / 180.0
+    l_ph_rad = light_phi * math.pi / 180.0
 
+    light0_x = light_R * math.cos(l_th_rad) * math.cos(l_ph_rad)
+    light0_y = light_R * math.sin(l_ph_rad)
+    light0_z = light_R * math.sin(l_th_rad) * math.cos(l_ph_rad)
+
+    light1_x = light_R * math.cos(l_th_rad + math.pi) * math.cos(l_ph_rad)
+    light1_y = light_R * math.sin(l_ph_rad)
+    light1_z = light_R * math.sin(l_th_rad + math.pi) * math.cos(l_ph_rad)
+
+    glLightfv(GL_LIGHT0, GL_POSITION, [light0_x, light0_y, light0_z, 1.0])
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, light0_diffuse)
+    glLightfv(GL_LIGHT1, GL_POSITION, [light1_x, light1_y, light1_z, 1.0])
+
+    glDisable(GL_LIGHTING)
+
+    glPushMatrix()
+    glTranslatef(light0_x, light0_y, light0_z)
+    quadric = gluNewQuadric()
+    glColor3f(1.0, 1.0, 0.0)
+    gluSphere(quadric, 0.5, 6, 6)
+    gluDeleteQuadric(quadric)
+    glPopMatrix()
+
+    glPushMatrix()
+    glTranslatef(light1_x, light1_y, light1_z)
+    quadric = gluNewQuadric()
+    glColor3f(0.0, 0.0, 1.0)
+    gluSphere(quadric, 0.5, 6, 6)
+    gluDeleteQuadric(quadric)
+    glPopMatrix()
+
+    glEnable(GL_LIGHTING)
     axes()
 
     glBegin(GL_TRIANGLES)
@@ -195,7 +235,7 @@ def render(time):
 
 def main():
     if not glfwInit(): sys.exit(-1)
-    window = glfwCreateWindow(400, 400, "Lab 5 - Zadanie 3.5", None, None)
+    window = glfwCreateWindow(400, 400, "Lab 5 - Zadanie 4.0", None, None)
     if not window: glfwTerminate(); sys.exit(-1)
     glfwMakeContextCurrent(window)
     glfwSetFramebufferSizeCallback(window, update_viewport)
