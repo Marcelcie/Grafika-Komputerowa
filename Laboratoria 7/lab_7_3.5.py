@@ -19,7 +19,7 @@ def compile_shaders():
         #version 330 core
 
         layout(location = 0) in vec4 position;
-        layout(location = 1) in vec4 color_in; // n2: nowa zmienna wejściowa dla koloru
+        layout(location = 1) in vec4 color_in;
 
         uniform mat4 M_matrix;
         uniform mat4 V_matrix;
@@ -29,7 +29,7 @@ def compile_shaders():
         
         void main(void) {
             gl_Position = P_matrix * V_matrix * M_matrix * position;
-            vertex_color = color_in; // n3: przekazanie koloru z atrybutu do shadera fragmentów
+            vertex_color = color_in;
         }
     """
 
